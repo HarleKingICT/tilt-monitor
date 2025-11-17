@@ -94,8 +94,9 @@
             if (tilt > THRESHOLD) {
                 alertDiv.style.display = 'block';
                 document.body.style.backgroundColor = '#ffcccc';
-                alarmAudio.play();
                 alarmAudio.loop = true;
+                alarmAudio.play();
+                
                 if ('vibrate' in navigator) {
                     navigator.vibrate([200, 100, 200]); // 振動模式
                 }
@@ -125,3 +126,4 @@
 </body>
 
 </html>
+
