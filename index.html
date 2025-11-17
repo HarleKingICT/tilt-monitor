@@ -103,6 +103,9 @@
             } else {
                 alertDiv.style.display = 'none';
                 document.body.style.backgroundColor = '#f0f0f0';
+                alarmAudio.pause(); // 停止播放
+                alarmAudio.currentTime = 0; // 重置到開始位置
+                alarmAudio.loop = false; // 如果想在非警報時關閉循環
             }
         }
 
@@ -126,4 +129,5 @@
 </body>
 
 </html>
+
 
