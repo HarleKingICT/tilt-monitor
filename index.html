@@ -43,7 +43,7 @@
     <div id="tilt-info">傾斜度：0°</div>
     <div id="alert">警報：傾斜超過閾值！</div>
 
-    <audio id="alarm-sound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
+    <audio id="alarm-sound" src="warning-alarm.mp3" preload="auto"></audio>
 
     <script>
         const THRESHOLD = 5; // 傾斜閾值（度），可根據需要調整
@@ -95,6 +95,7 @@
                 alertDiv.style.display = 'block';
                 document.body.style.backgroundColor = '#ffcccc';
                 alarmAudio.play();
+                alarmAudio.loop = true;
                 if ('vibrate' in navigator) {
                     navigator.vibrate([200, 100, 200]); // 振動模式
                 }
@@ -122,4 +123,5 @@
         });
     </script>
 </body>
+
 </html>
