@@ -1,133 +1,88 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>棚架傾斜度監測器</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        #status {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        #tilt-info {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-        #alert {
-            font-size: 32px;
-            color: red;
-            display: none;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>棚架傾斜度監測器</h1>
-    <p>請將手機固定在棚架上，並確保設備有陀螺儀功能。</p>
-    <button id="start-btn">開始監測</button>
-    <div id="status">狀態：未啟動</div>
-    <div id="tilt-info">傾斜度：0°</div>
-    <div id="alert">警報：傾斜超過閾值！</div>
+const THRESHOLD = 5; // 傾斜閾值（度），可根據需要調整
+let isMonitoring = false;
+let isAlarming = false; // 新增旗標：追蹤警報是否已啟動
+let alarmAudio = document.getElementById('alarm-sound');
+let statusDiv = document.getElementById('status');
+let tiltInfoDiv = document.getElementById('tilt-info');
+let alertDiv = document.getElementById('alert');
 
-    <audio id="alarm-sound" src="warning-alarm.mp3" preload="auto"></audio>
-
-    <script>
-        const THRESHOLD = 5; // 傾斜閾值（度），可根據需要調整
-        let isMonitoring = false;
-        let alarmAudio = document.getElementById('alarm-sound');
-        let statusDiv = document.getElementById('status');
-        let tiltInfoDiv = document.getElementById('tilt-info');
-        let alertDiv = document.getElementById('alert');
-
-        // 請求權限（針對iOS）
-        async function requestPermission() {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const permission = await DeviceOrientationEvent.requestPermission();
-                    console.log('Permission:', permission); // Debug: 檢查權限結果
-                    if (permission === 'granted') {
-                        return true;
-                    } else {
-                        alert('權限被拒絕，無法使用陀螺儀。');
-                        return false;
-                    }
-                } catch (error) {
-                    console.error('請求權限失敗:', error);
-                    return false;
-                }
-            }
-            return true; // Android 等不需要請求
-        }
-
-        // 計算傾斜度（使用 beta 和 gamma 的組合）
-        function calculateTilt(beta, gamma) {
-            // 計算總傾斜角度（歐幾里德範數）
-            return Math.sqrt(beta * beta + gamma * gamma);
-        }
-
-        // 處理方向事件
-        function handleOrientation(event) {
-            if (!isMonitoring) return;
-
-            console.log('Event fired:', event.beta, event.gamma); // Debug: 檢查事件是否觸發及值
-
-            const beta = event.beta || 0; // 前後傾斜（度）
-            const gamma = event.gamma || 0; // 左右傾斜（度）
-
-            const tilt = calculateTilt(beta, gamma);
-            tiltInfoDiv.textContent = `傾斜度：${tilt.toFixed(2)}°`;
-
-            if (tilt > THRESHOLD) {
-                alertDiv.style.display = 'block';
-                document.body.style.backgroundColor = '#ffcccc';
-                alarmAudio.loop = true;
-                alarmAudio.play();
-                
-                if ('vibrate' in navigator) {
-                    navigator.vibrate([200, 100, 200]); // 振動模式
-                }
+// 請求權限（針對iOS）
+async function requestPermission() {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            console.log('Permission:', permission); // Debug: 檢查權限結果
+            if (permission === 'granted') {
+                return true;
             } else {
-                alertDiv.style.display = 'none';
-                document.body.style.backgroundColor = '#f0f0f0';
-                alarmAudio.pause(); // 停止播放
-                alarmAudio.currentTime = 0; // 重置到開始位置
-                alarmAudio.loop = false; // 如果想在非警報時關閉循環
+                alert('權限被拒絕，無法使用陀螺儀。');
+                return false;
             }
+        } catch (error) {
+            console.error('請求權限失敗:', error);
+            return false;
         }
+    }
+    return true; // Android 等不需要請求
+}
 
-        // 啟動按鈕事件
-        document.getElementById('start-btn').addEventListener('click', async () => {
-            if (window.DeviceOrientationEvent) {
-                console.log('DeviceOrientation supported'); // Debug: 檢查是否支援
-            } else {
-                alert('您的設備不支援陀螺儀');
-                return;
-            }
+// 計算傾斜度（使用 beta 和 gamma 的組合）
+function calculateTilt(beta, gamma) {
+    // 計算總傾斜角度（歐幾里德範數）
+    return Math.sqrt(beta * beta + gamma * gamma);
+}
 
-            const hasPermission = await requestPermission();
-            if (hasPermission) {
-                window.addEventListener('deviceorientation', handleOrientation);
-                isMonitoring = true;
-                statusDiv.textContent = '狀態：監測中';
-            }
-        });
-    </script>
-</body>
+// 處理方向事件
+function handleOrientation(event) {
+    if (!isMonitoring) return;
 
-</html>
+    console.log('Event fired:', event.beta, event.gamma); // Debug: 檢查事件是否觸發及值
 
+    const beta = event.beta || 0; // 前後傾斜（度）
+    const gamma = event.gamma || 0; // 左右傾斜（度）
 
+    const tilt = calculateTilt(beta, gamma);
+    tiltInfoDiv.textContent = `傾斜度：${tilt.toFixed(2)}°`;
+
+    if (tilt > THRESHOLD) {
+        alertDiv.style.display = 'block';
+        document.body.style.backgroundColor = '#ffcccc';
+        
+        if (!isAlarming) { // 只在第一次進入警報時播放
+            alarmAudio.loop = true;
+            alarmAudio.play();
+            isAlarming = true;
+        }
+        
+        if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]); // 振動模式，可以視需要調整為不重複
+        }
+    } else {
+        alertDiv.style.display = 'none';
+        document.body.style.backgroundColor = '#f0f0f0';
+        
+        if (isAlarming) { // 只在離開警報時停止
+            alarmAudio.pause();
+            alarmAudio.currentTime = 0;
+            alarmAudio.loop = false; // 可選，重置循環
+            isAlarming = false;
+        }
+    }
+}
+
+// 啟動按鈕事件
+document.getElementById('start-btn').addEventListener('click', async () => {
+    if (window.DeviceOrientationEvent) {
+        console.log('DeviceOrientation supported'); // Debug: 檢查是否支援
+    } else {
+        alert('您的設備不支援陀螺儀');
+        return;
+    }
+
+    const hasPermission = await requestPermission();
+    if (hasPermission) {
+        window.addEventListener('deviceorientation', handleOrientation);
+        isMonitoring = true;
+        statusDiv.textContent = '狀態：監測中';
+    }
+});
